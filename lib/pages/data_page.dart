@@ -124,6 +124,7 @@ class _BuyDataPageState extends State<BuyDataPage>
           opacity: _isFormValid.value ? 1 : 0,
           duration: const Duration(milliseconds: 250),
           child: Container(
+            margin: const EdgeInsets.only(bottom: 20),
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
             decoration: const BoxDecoration(color: Colors.transparent),
             child: SizedBox(
