@@ -5,6 +5,7 @@ import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:mktdata/auth/resume_page.dart';
+import 'package:mktdata/main_page.dart';
 
 class LoginController extends GetxController {
   final box = GetStorage();
@@ -86,7 +87,7 @@ class LoginController extends GetxController {
         if (profileData.containsKey('balance')) {
           await box.write("balance", profileData['balance'].toString());
 
-          Get.offAll(() => const ResumePage());
+          Get.offAll(() => MainPage());
         }
       } else if (response.statusCode == 401) {
         // Handle expired token if necessary
