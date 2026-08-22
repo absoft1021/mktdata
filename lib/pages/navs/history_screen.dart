@@ -51,12 +51,64 @@ class HistoryScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTransactionTile(dynamic tx, bool isDark, ThemeData theme) {
-    bool isSell = false;
-    String status = tx[4].toString().toLowerCase();
+  Widget _buildTransactionTile(
+    dynamic tx,
+    bool isDark,
+    ThemeData theme,
+  ) {
+    // Get transaction properties
+    String type = (tx['type'] ?? 'Unknown').toString().toLowerCase();
+    String status = (tx['status'] ?? 'Pending').toString().toLowerCase();
+    String description = tx['desc'] ?? tx['description'] ?? '';
+    String amount = tx['amount'].toString();
+    String date = tx['date'] ?? '';
+    String ref = tx['ref'] ?? '';
 
-    // Status Colors
-    Color statusColor = status == 'pending' ? Colors.orange : Colors.green;
+    // Determine if it's an outgoing transaction
+    bool isOutgoing = !type.contains('topup') && !type.contains('funding');
+
+    // Status colors
+    Color statusColor = status == 'pending'
+        ? Colors.orange
+        : status == 'failed'
+            ? Colors.red
+            : Colors.green;
+
+    // Transaction type colors and icons
+    Color iconBgColor;
+    IconData iconData;
+
+    switch (type) {
+      case 'airtime':
+        iconBgColor = Colors.blue;
+        iconData = Icons.phone_iphone_rounded;
+        break;
+      case 'data':
+        iconBgColor = Colors.purple;
+        iconData = Icons.signal_cellular_4_bar_rounded;
+        break;
+      case 'wallet topup':
+      case 'funding':
+        iconBgColor = Colors.green;
+        iconData = Icons.account_balance_wallet_rounded;
+        isOutgoing = false;
+        break;
+      case 'electricity':
+        iconBgColor = Colors.amber;
+        iconData = Icons.flash_on_rounded;
+        break;
+      case 'cable':
+        iconBgColor = Colors.indigo;
+        iconData = Icons.tv_rounded;
+        break;
+      case 'datacard':
+        iconBgColor = Colors.cyan;
+        iconData = Icons.credit_card_rounded;
+        break;
+      default:
+        iconBgColor = Colors.grey;
+        iconData = Icons.receipt_long_rounded;
+    }
 
     return InkWell(
       onTap: () => Get.to(() => TransactionDetailScreen(), arguments: tx),
@@ -65,16 +117,15 @@ class HistoryScreen extends StatelessWidget {
           color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: isDark ? Border.all(color: Colors.white10) : null,
-          boxShadow:
-              isDark
-                  ? []
-                  : [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.03),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+          boxShadow: isDark
+              ? []
+              : [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
         ),
         child: ListTile(
           contentPadding: const EdgeInsets.symmetric(
@@ -82,59 +133,82 @@ class HistoryScreen extends StatelessWidget {
             vertical: 8,
           ),
           leading: CircleAvatar(
-            backgroundColor: (isSell ? Colors.red : Colors.green).withValues(
-              alpha: 0.1,
-            ),
+            backgroundColor: iconBgColor.withValues(alpha: 0.1),
             child: Icon(
-              isSell ? Icons.south_west_rounded : Icons.north_east_rounded,
-              color: isSell ? Colors.red : Colors.green,
-              size: 20,
+              iconData,
+              color: iconBgColor,
+              size: 22,
             ),
           ),
           title: Row(
             children: [
-              Text(
-                tx[1],
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 15,
+              Expanded(
+                child: Text(
+                  type.capitalizeFirst ?? 'Transaction',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              const Spacer(),
-              // Text(
-              //   "₦${double.parse(tx[3]).toStringAsFixed(2)}",
-              //   style: const TextStyle(fontWeight: FontWeight.bold),
-              // ),
+              const SizedBox(width: 8),
+              Text(
+                amount,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
             ],
           ),
           subtitle: Padding(
             padding: const EdgeInsets.only(top: 4.0),
-            child: Row(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  tx[5].toString().substring(0, tx[5].toString().indexOf("<")),
+                  description,
                   style: const TextStyle(fontSize: 12),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                const Spacer(),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    status.capitalizeFirst!,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: statusColor,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        date,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: theme.hintColor,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                  ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: statusColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        status.capitalizeFirst ?? 'Unknown',
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: statusColor,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
