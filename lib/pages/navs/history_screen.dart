@@ -31,23 +31,83 @@ class HistoryScreen extends StatelessWidget {
           return const Center(child: CircularProgressIndicator());
         }
 
-        if (c.transactions.isEmpty) {
-          return _buildEmptyState(theme);
-        }
-
-        return RefreshIndicator(
-          onRefresh: () => c.getTransactions(),
-          child: ListView.separated(
-            padding: const EdgeInsets.all(20),
-            itemCount: c.transactions.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemBuilder: (context, index) {
-              final tx = c.transactions[index];
-              return _buildTransactionTile(tx, isDark, theme);
-            },
-          ),
+        return Column(
+          children: [
+            // Filter Chips Section
+            _buildFilterChips(isDark),
+            
+            // Transactions List
+            Expanded(
+              child: c.filteredTransactions.isEmpty
+                  ? _buildEmptyState(theme)
+                  : RefreshIndicator(
+                      onRefresh: () => c.getTransactions(),
+                      child: ListView.separated(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: c.filteredTransactions.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 10),
+                        itemBuilder: (context, index) {
+                          final tx = c.filteredTransactions[index];
+                          return _buildTransactionTile(tx, isDark, theme);
+                        },
+                      ),
+                    ),
+            ),
+          ],
         );
       }),
+    );
+  }
+
+  Widget _buildFilterChips(bool isDark) {
+    return Obx(
+      () => SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            ...c.filterOptions.map((filter) {
+              final isSelected = c.selectedFilter.value == filter;
+              return Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: FilterChip(
+                  label: Text(filter),
+                  selected: isSelected,
+                  onSelected: (_) => c.applyFilter(filter),
+                  backgroundColor:
+                      isDark
+                          ? Colors.white.withValues(alpha: 0.08)
+                          : Colors.grey.withValues(alpha: 0.1),
+                  selectedColor:
+                      _getFilterColor(filter).withValues(alpha: 0.2),
+                  labelStyle: TextStyle(
+                    fontWeight:
+                        isSelected ? FontWeight.w600 : FontWeight.w500,
+                    color:
+                        isSelected
+                            ? _getFilterColor(filter)
+                            : (isDark ? Colors.white70 : Colors.black54),
+                    fontSize: 12,
+                  ),
+                  side: BorderSide(
+                    color:
+                        isSelected
+                            ? _getFilterColor(filter)
+                            : (isDark
+                                ? Colors.white10
+                                : Colors.grey.withValues(alpha: 0.2)),
+                    width: isSelected ? 1.5 : 0.5,
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                ),
+              );
+            }).toList(),
+          ],
+        ),
+      ),
     );
   }
 
@@ -59,7 +119,7 @@ class HistoryScreen extends StatelessWidget {
     // Get transaction properties
     String type = (tx['type'] ?? 'Unknown').toString().toLowerCase();
     String status = (tx['status'] ?? 'Pending').toString().toLowerCase();
-    String description = tx['desc'] ?? tx['description'] ?? '';
+    String description = tx['desc'] ?? tx['description'] ?? 'No description';
     String amount = tx['amount'].toString();
     String date = tx['date'] ?? '';
     String ref = tx['ref'] ?? '';
@@ -112,6 +172,7 @@ class HistoryScreen extends StatelessWidget {
 
     return InkWell(
       onTap: () => Get.to(() => TransactionDetailScreen(), arguments: tx),
+      borderRadius: BorderRadius.circular(16),
       child: Container(
         decoration: BoxDecoration(
           color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
@@ -127,95 +188,131 @@ class HistoryScreen extends StatelessWidget {
                   ),
                 ],
         ),
-        child: ListTile(
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 8,
-          ),
-          leading: CircleAvatar(
-            backgroundColor: iconBgColor.withValues(alpha: 0.1),
-            child: Icon(
-              iconData,
-              color: iconBgColor,
-              size: 22,
-            ),
-          ),
-          title: Row(
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
             children: [
+              // Leading Icon
+              CircleAvatar(
+                radius: 28,
+                backgroundColor: iconBgColor.withValues(alpha: 0.1),
+                child: Icon(
+                  iconData,
+                  color: iconBgColor,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              
+              // Middle Content
               Expanded(
-                child: Text(
-                  type.capitalizeFirst ?? 'Transaction',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                amount,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
-          subtitle: Padding(
-            padding: const EdgeInsets.only(top: 4.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  description,
-                  style: const TextStyle(fontSize: 12),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Text(
-                        date,
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: theme.hintColor,
+                    // Type and Amount Row
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            type.capitalizeFirst ?? 'Transaction',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                        const SizedBox(width: 8),
+                        Text(
+                          amount,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
+                    const SizedBox(height: 4),
+                    
+                    // Description
+                    Text(
+                      description,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: theme.hintColor,
+                        height: 1.3,
                       ),
-                      decoration: BoxDecoration(
-                        color: statusColor.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        status.capitalizeFirst ?? 'Unknown',
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: statusColor,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    
+                    // Date and Status Row
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            date,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: theme.hintColor.withValues(alpha: 0.7),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                      ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: statusColor.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            status.capitalizeFirst ?? 'Unknown',
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: statusColor,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
     );
+  }
+
+  Color _getFilterColor(String filter) {
+    switch (filter.toLowerCase()) {
+      case 'airtime':
+        return Colors.blue;
+      case 'data':
+        return Colors.purple;
+      case 'wallet topup':
+        return Colors.green;
+      case 'electricity':
+        return Colors.amber;
+      case 'cable':
+        return Colors.indigo;
+      case 'datacard':
+        return Colors.cyan;
+      default:
+        return Colors.grey;
+    }
   }
 
   Widget _buildEmptyState(ThemeData theme) {

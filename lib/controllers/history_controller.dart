@@ -7,7 +7,19 @@ class HistoryController extends GetxController {
   final box = GetStorage();
 
   var transactions = [].obs;
+  var filteredTransactions = [].obs;
   var isLoading = false.obs;
+  var selectedFilter = 'All'.obs;
+
+  final List<String> filterOptions = [
+    'All',
+    'Airtime',
+    'Data',
+    'Wallet Topup',
+    'Electricity',
+    'Cable',
+    'Datacard',
+  ];
 
   @override
   void onInit() {
@@ -83,6 +95,7 @@ class HistoryController extends GetxController {
           });
 
           transactions.value = allTransactions;
+          applyFilter('All'); // Apply default filter
           print("Total transactions loaded: ${transactions.length}");
         }
       }
@@ -90,6 +103,20 @@ class HistoryController extends GetxController {
       print("History Error: $e");
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  void applyFilter(String filter) {
+    selectedFilter.value = filter;
+
+    if (filter == 'All') {
+      filteredTransactions.value = transactions;
+    } else {
+      filteredTransactions.value = transactions
+          .where((tx) =>
+              (tx['type'] ?? '').toString().toLowerCase() ==
+              filter.toLowerCase())
+          .toList();
     }
   }
 

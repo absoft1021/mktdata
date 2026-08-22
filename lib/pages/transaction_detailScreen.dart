@@ -5,49 +5,81 @@ import 'package:get/get.dart';
 class TransactionDetailScreen extends StatelessWidget {
   const TransactionDetailScreen({super.key});
 
-  // Helper to handle String or num types safely
-  String _formatAmount(dynamic amount) {
-    if (amount == null || amount.toString().isEmpty) return "0";
-    // Remove currency symbols if present in the string before parsing
-    String cleanAmount = amount.toString().replaceAll(RegExp(r'[^0-9.]'), '');
-    double value = double.tryParse(cleanAmount) ?? 0.0;
-    return value.toStringAsFixed(0);
-  }
-
   @override
   Widget build(BuildContext context) {
     final dynamic tx = Get.arguments;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // Basic validation to ensure tx is a list and has enough elements
-    if (tx == null || tx is! List || tx.length < 5) {
-      return const Scaffold(
-        body: Center(child: Text("Invalid transaction data")),
+    // Validate transaction data
+    if (tx == null || tx is! Map) {
+      return Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        appBar: AppBar(
+          title: const Text('Details'),
+          centerTitle: true,
+        ),
+        body: const Center(child: Text("Invalid transaction data")),
       );
     }
 
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final String type = (tx['type'] ?? 'Unknown').toString().toLowerCase();
+    final String status = (tx['status'] ?? 'Pending').toString().toLowerCase();
+    final String description = tx['desc'] ?? tx['description'] ?? 'No description';
+    final String amount = tx['amount'].toString();
+    final String date = tx['date'] ?? 'N/A';
+    final String ref = tx['ref'] ?? 'N/A';
 
-    // Determine if it's a sell/debit based on logic (Assumed logic: index 1 or narration)
-    // Adjust this boolean based on your actual data structure
-    final bool isSell =
-        tx[1].toString().toLowerCase().contains('sell') ||
-        tx[1].toString().toLowerCase().contains('debit');
-
-    final String status = tx[4]?.toString().toLowerCase() ?? 'unknown';
+    // Determine if it's an outgoing transaction
+    bool isOutgoing = !type.contains('topup') && !type.contains('funding');
 
     // Status color logic
-    final Color statusColor = switch (status) {
-      'pending' => Colors.orange,
-      'failed' => Colors.red,
-      'success' => Colors.green,
-      _ => Colors.amber,
-    };
+    final Color statusColor = status == 'pending'
+        ? Colors.orange
+        : status == 'failed'
+            ? Colors.red
+            : Colors.green;
+
+    // Transaction type icon and color
+    Color iconBgColor;
+    IconData iconData;
+
+    switch (type) {
+      case 'airtime':
+        iconBgColor = Colors.blue;
+        iconData = Icons.phone_iphone_rounded;
+        break;
+      case 'data':
+        iconBgColor = Colors.purple;
+        iconData = Icons.signal_cellular_4_bar_rounded;
+        break;
+      case 'wallet topup':
+      case 'funding':
+        iconBgColor = Colors.green;
+        iconData = Icons.account_balance_wallet_rounded;
+        isOutgoing = false;
+        break;
+      case 'electricity':
+        iconBgColor = Colors.amber;
+        iconData = Icons.flash_on_rounded;
+        break;
+      case 'cable':
+        iconBgColor = Colors.indigo;
+        iconData = Icons.tv_rounded;
+        break;
+      case 'datacard':
+        iconBgColor = Colors.cyan;
+        iconData = Icons.credit_card_rounded;
+        break;
+      default:
+        iconBgColor = Colors.grey;
+        iconData = Icons.receipt_long_rounded;
+    }
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text(
-          'Details',
+          'Transaction Details',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
@@ -59,113 +91,118 @@ class TransactionDetailScreen extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Column(
           children: [
-            _buildHeader(tx, isSell, isDark),
-            const SizedBox(height: 12),
+            _buildHeader(
+              type,
+              amount,
+              isOutgoing,
+              isDark,
+              iconBgColor,
+              iconData,
+            ),
+            const SizedBox(height: 16),
             _buildInfoCard(isDark, [
+              _detailRow(
+                "Type",
+                type.capitalizeFirst ?? "N/A",
+              ),
               _detailRow(
                 "Status",
                 status.capitalizeFirst ?? "N/A",
                 valueColor: statusColor,
               ),
-              _detailRow("Amount", "₦${_formatAmount(tx[3])}"),
-              _detailRow("Type", tx[1]?.toString() ?? "N/A"),
-              _detailRow(
-                "Date",
-                tx[5]?.toString().substring(
-                      0,
-                      tx[5]?.toString().indexOf("<"),
-                    ) ??
-                    "N/A",
-              ),
+              _detailRow("Amount", amount),
+              _detailRow("Date", date),
             ]),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             _buildInfoCard(isDark, [
               _detailRow(
-                "Reference",
-                tx[0]?.toString() ?? "N/A",
+                "Reference ID",
+                ref,
                 canCopy: true,
               ),
-              // If tx is a List, hash might be at a specific index, e.g., tx[6]
-              // Adjust the index below to match your actual list index for Hash
-              if (tx.length > 6 && tx[6] != null)
-                _detailRow("Tx Hash", tx[6].toString(), canCopy: true),
+              if (tx['oldbal'] != null)
+                _detailRow("Old Balance", tx['oldbal'].toString()),
+              if (tx['newbal'] != null)
+                _detailRow("New Balance", tx['newbal'].toString()),
             ]),
-            const SizedBox(height: 10),
-            // Narration index usually 7 or similar in these list-based structures
+            const SizedBox(height: 12),
             _buildInfoCard(isDark, [
-              _narrationBlock(
-                tx.length > 7 ? tx[7]?.toString() : "No narration available",
-              ),
+              _narrationBlock(description),
             ]),
-            const SizedBox(height: 20),
-            _buildDoneButton(isSell),
+            const SizedBox(height: 24),
+            _buildDoneButton(isOutgoing),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildHeader(dynamic tx, bool isSell, bool isDark) => Container(
-    width: double.infinity,
-    padding: const EdgeInsets.symmetric(vertical: 24),
-    decoration: BoxDecoration(
-      color:
-          isDark
-              ? Colors.white.withOpacity(0.05)
-              : Colors.grey.withOpacity(0.05),
-      borderRadius: BorderRadius.circular(20),
-      border: Border.all(
-        color: isDark ? Colors.white10 : Colors.black.withOpacity(0.05),
-      ),
-    ),
-    child: Column(
-      children: [
-        CircleAvatar(
-          radius: 30,
-          backgroundColor:
-              isSell
-                  ? const Color(0xFFFF3D71).withOpacity(0.1)
-                  : const Color(0xFF00E096).withOpacity(0.1),
-          child: Icon(
-            isSell ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
-            size: 32,
-            color: isSell ? const Color(0xFFFF3D71) : const Color(0xFF00E096),
+  Widget _buildHeader(
+    String type,
+    String amount,
+    bool isOutgoing,
+    bool isDark,
+    Color iconBgColor,
+    IconData iconData,
+  ) =>
+      Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 24),
+        decoration: BoxDecoration(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.05)
+              : Colors.grey.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color:
+                isDark
+                    ? Colors.white10
+                    : Colors.black.withValues(alpha: 0.05),
           ),
         ),
-        const SizedBox(height: 12),
-        Text(
-          isSell ? "Sent" : "Received",
-          style: const TextStyle(fontSize: 14, color: Colors.grey),
+        child: Column(
+          children: [
+            CircleAvatar(
+              radius: 40,
+              backgroundColor: iconBgColor.withValues(alpha: 0.15),
+              child: Icon(
+                iconData,
+                size: 40,
+                color: iconBgColor,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              type.capitalizeFirst ?? 'Transaction',
+              style: const TextStyle(fontSize: 14, color: Colors.grey),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              amount,
+              style: const TextStyle(fontSize: 36, fontWeight: FontWeight.bold),
+            ),
+          ],
         ),
-        const SizedBox(height: 4),
-        Text(
-          "₦${_formatAmount(tx[3])}",
-          style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-        ),
-      ],
-    ),
-  );
+      );
 
   Widget _buildInfoCard(bool isDark, List<Widget> children) => Container(
-    padding: const EdgeInsets.all(16),
-    width: double.infinity,
-    decoration: BoxDecoration(
-      color: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
-      borderRadius: BorderRadius.circular(16),
-      boxShadow:
-          isDark
+        padding: const EdgeInsets.all(16),
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: isDark
               ? []
               : [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.03),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-    ),
-    child: Column(
-      children:
-          children
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+        ),
+        child: Column(
+          children: children
               .expand(
                 (w) => [
                   w,
@@ -174,98 +211,103 @@ class TransactionDetailScreen extends StatelessWidget {
               )
               .toList()
             ..removeLast(),
-    ),
-  );
+        ),
+      );
 
   Widget _detailRow(
     String label,
     String value, {
     Color? valueColor,
     bool canCopy = false,
-  }) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 4),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 13)),
-        const SizedBox(width: 20),
-        Expanded(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              Flexible(
-                child: Text(
-                  value,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: valueColor,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.right,
-                ),
-              ),
-              if (canCopy && value != "N/A")
-                GestureDetector(
-                  onTap: () {
-                    Clipboard.setData(ClipboardData(text: value));
-                    Get.rawSnackbar(
-                      message: "$label copied to clipboard",
-                      snackPosition: SnackPosition.BOTTOM,
-                      duration: const Duration(seconds: 2),
-                      margin: const EdgeInsets.all(12),
-                      borderRadius: 8,
-                    );
-                  },
-                  child: const Padding(
-                    padding: EdgeInsets.only(left: 8),
-                    child: Icon(
-                      Icons.copy_all_rounded,
-                      size: 18,
-                      color: Colors.blueAccent,
+  }) =>
+      Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              label,
+              style: const TextStyle(color: Colors.grey, fontSize: 13),
+            ),
+            const SizedBox(width: 20),
+            Expanded(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Flexible(
+                    child: Text(
+                      value,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: valueColor,
+                        fontSize: 13,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.right,
                     ),
                   ),
-                ),
-            ],
+                  if (canCopy && value != "N/A")
+                    GestureDetector(
+                      onTap: () {
+                        Clipboard.setData(ClipboardData(text: value));
+                        Get.rawSnackbar(
+                          message: "$label copied to clipboard",
+                          snackPosition: SnackPosition.BOTTOM,
+                          duration: const Duration(seconds: 2),
+                          margin: const EdgeInsets.all(12),
+                          borderRadius: 8,
+                        );
+                      },
+                      child: const Padding(
+                        padding: EdgeInsets.only(left: 8),
+                        child: Icon(
+                          Icons.copy_all_rounded,
+                          size: 18,
+                          color: Colors.blueAccent,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+
+  Widget _narrationBlock(String text) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            "Description",
+            style: TextStyle(color: Colors.grey, fontSize: 12),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            text,
+            style: const TextStyle(fontSize: 14, height: 1.5),
+          ),
+        ],
+      );
+
+  Widget _buildDoneButton(bool isOutgoing) => SizedBox(
+        width: double.infinity,
+        height: 54,
+        child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: isOutgoing ? Colors.blue : Colors.green,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            elevation: 0,
+          ),
+          onPressed: () => Get.back(),
+          child: const Text(
+            "Done",
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
           ),
         ),
-      ],
-    ),
-  );
-
-  Widget _narrationBlock(String? text) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      const Text(
-        "Narration",
-        style: TextStyle(color: Colors.grey, fontSize: 12),
-      ),
-      const SizedBox(height: 6),
-      Text(
-        text ?? "No narration provided",
-        style: const TextStyle(fontSize: 14, height: 1.4),
-      ),
-    ],
-  );
-
-  Widget _buildDoneButton(bool isSell) => SizedBox(
-    width: double.infinity,
-    height: 54,
-    child: ElevatedButton(
-      style: ElevatedButton.styleFrom(
-        backgroundColor:
-            isSell ? const Color(0xFFFF3D71) : const Color(0xFF00E096),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        elevation: 0,
-      ),
-      onPressed: () => Get.back(),
-      child: const Text(
-        "Done",
-        style: TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.bold,
-          fontSize: 16,
-        ),
-      ),
-    ),
-  );
+      );
 }
