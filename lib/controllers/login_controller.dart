@@ -21,6 +21,25 @@ class LoginController extends GetxController {
     }
   }
 
+  /// Dio only auto-decodes JSON when the response Content-Type header says
+  /// application/json. If the PHP endpoint returns text/html (or has stray
+  /// output before the JSON), response.data comes back as a raw String
+  /// instead of a Map, which crashes a direct `Map<String, dynamic> data =
+  /// response.data` assignment. This normalizes either case.
+  Map<String, dynamic> _asMap(dynamic raw) {
+    if (raw is Map<String, dynamic>) return raw;
+    if (raw is String) {
+      final decoded = jsonDecode(raw);
+      if (decoded is Map<String, dynamic>) return decoded;
+      throw FormatException(
+        'Expected a JSON object but got ${decoded.runtimeType}',
+      );
+    }
+    throw FormatException(
+      'Expected a JSON object but got ${raw.runtimeType}',
+    );
+  }
+
   void login(String username, String password) async {
     try {
       isLoading.value = true;
@@ -33,11 +52,12 @@ class LoginController extends GetxController {
       isLoading.value = false;
 
       if (response.statusCode == 200) {
-        Map<String, dynamic> data = response.data;
+        final data = _asMap(response.data);
 
         if (data['success'] == 1 || data['success'] == "1") {
-          var profile = data['profile'];
-          if (profile != null) {
+          final profileRaw = data['profile'];
+          if (profileRaw != null) {
+            final profile = _asMap(profileRaw);
             await box.write("profile", profile);
             await box.write("telegram", profile['telegram_link'] ?? '');
             await box.write("contact", profile['contact_phone'] ?? '');
@@ -67,7 +87,7 @@ class LoginController extends GetxController {
     try {
       final response = await api.get('current_user_state.php');
       if (response.statusCode == 200) {
-        Map<String, dynamic> profileData = response.data;
+        final profileData = _asMap(response.data);
         await box.write("userData", profileData);
 
         if (profileData.containsKey('balance')) {
