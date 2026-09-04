@@ -37,7 +37,7 @@ class HistoryController extends GetxController {
         headers: {"Authorization": token ?? ""},
       ).timeout(const Duration(seconds: 15));
 
-      print("Response Status: ${response.statusCode}");
+
 
       if (response.statusCode == 200) {
         var jsonData = jsonDecode(response.body);
@@ -96,11 +96,11 @@ class HistoryController extends GetxController {
 
           transactions.value = allTransactions;
           applyFilter('All'); // Apply default filter
-          print("Total transactions loaded: ${transactions.length}");
+
         }
       }
     } catch (e) {
-      print("History Error: $e");
+
     } finally {
       isLoading.value = false;
     }
@@ -110,7 +110,7 @@ class HistoryController extends GetxController {
     selectedFilter.value = filter;
 
     if (filter == 'All') {
-      filteredTransactions.value = transactions;
+      filteredTransactions.value = List.from(transactions);
     } else {
       filteredTransactions.value = transactions
           .where((tx) =>

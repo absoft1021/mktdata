@@ -36,7 +36,7 @@ class _MainPageState extends State<MainPage> {
       body: PopScope(
         canPop: false,
         child: FocusDetector(
-          onForegroundGained: () => Get.to(() => ResumePage()),
+          onForegroundGained: () => Get.offAll(() => const ResumePage()),
           child: PageView(
             controller: _controller,
             children: pages,

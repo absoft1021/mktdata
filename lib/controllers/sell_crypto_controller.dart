@@ -148,7 +148,7 @@ class SellCryptoController extends GetxController {
           colorText: Colors.white,
         );
       } else {
-        print("Server Error: ${response.body}");
+
         final data = jsonDecode(response.body);
         final msg = data['response'] ?? data['message'] ?? "Transaction failed";
         Get.snackbar(
@@ -159,7 +159,7 @@ class SellCryptoController extends GetxController {
         );
       }
     } catch (e) {
-      print("Error: $e");
+
       Get.snackbar(
         "Failed",
         "Something went wrong",
@@ -171,85 +171,5 @@ class SellCryptoController extends GetxController {
     }
   }
 
-  Future<void> processSaleX({
-    required String amount,
-    required bool isWallet,
-  }) async {
-    if (imageFile.value == null) {
-      Get.snackbar("Missing Proof", "Please upload payment proof");
-      return;
-    }
 
-    final coin = selectedCoin;
-    final source = isWallet ? selectedNetwork : selectedExchanger;
-    final profile = box.read("profile") ?? {};
-
-    try {
-      isSubmitting.value = true;
-
-      final request = http.MultipartRequest(
-        'POST',
-        Uri.parse("https://mktdata.com.ng/api/v1/sell_crypto"),
-      );
-      request.headers.addAll({
-        "Authorization": box.read("token") ?? "",
-        "Accept": "application/json",
-      });
-
-      request.fields.addAll({
-        "amount": amount,
-        "coin_type": (coin['name'] ?? '').toString(),
-        "source_wallet":
-            isWallet ? (source['wallet_address'] ?? '') : (source['uid'] ?? ''),
-        "trans_pin": "1111",
-        "comment": "Sale",
-        "network": (source['name'] ?? '').toString(),
-        "bank_name": (profile['bank_name'] ?? '').toString(),
-        "account_number": (profile['account_number'] ?? '').toString(),
-        "account_name": (profile['account_name'] ?? '').toString(),
-      });
-
-      request.files.add(
-        await http.MultipartFile.fromPath(
-          'proof',
-          imageFile.value!.path,
-          filename: basename(imageFile.value!.path),
-        ),
-      );
-
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        Get.back();
-        Get.back();
-        Get.snackbar(
-          "Success",
-          "Transaction Submitted Successfully",
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
-        );
-      } else {
-        print("Server Error: ${response.body}");
-        final data = jsonDecode(response.body);
-        final msg = data['response'] ?? data['message'] ?? "Transaction failed";
-        Get.snackbar(
-          "Failed",
-          msg,
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-        );
-      }
-    } catch (e) {
-      print("Error: $e");
-      Get.snackbar(
-        "Failed",
-        "Something went wrong",
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
-    } finally {
-      isSubmitting.value = false;
-    }
-  }
 }

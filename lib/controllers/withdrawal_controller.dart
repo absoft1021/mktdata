@@ -64,7 +64,7 @@ class WithdrawalController extends GetxController {
       final data = jsonDecode(response.body);
       if (response.statusCode == 200) {
         // Accessing data nested under 'data' key based on your sample response
-        verifiedName.value = data['data']['account_name'] ?? "Unknown Account";
+        verifiedName.value = data['data']?['account_name'] ?? "Unknown Account";
       } else {
         verifiedName.value = data['response'] ?? "Account not found";
       }
@@ -109,7 +109,7 @@ class WithdrawalController extends GetxController {
           backgroundColor: Colors.green,
           colorText: Colors.white,
         );
-        Get.to(() => TransactionDetailScreen(), arguments: data);
+        Get.off(() => TransactionDetailScreen(), arguments: data);
       } else {
         Get.snackbar(
           "Error",

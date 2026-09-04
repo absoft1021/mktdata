@@ -95,7 +95,7 @@ class KycController extends GetxController {
       });
 
       // Use the pin passed from the text controller
-      request.fields['trans_pin'] = box.read("profile")['trans_pin'] ?? "";
+      request.fields['trans_pin'] = box.read("profile")?['trans_pin'] ?? "";
       // request.fields['proof'] = address;
 
       request.files.add(

@@ -1,13 +1,11 @@
 import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:http/http.dart' as http;
+import 'package:mktdata/utils/api_client.dart';
 
 class MainController extends GetxController {
   final box = GetStorage();
-
-  final String profileUrl =
-      "https://mktdata.com.ng/user/api/current_user_state.php";
+  final api = ApiClient.to;
 
   var userProfile = {}.obs;
   var bankAccounts = [].obs;
@@ -15,21 +13,17 @@ class MainController extends GetxController {
   var isLoading = false.obs;
   var isAssetsExpanded = false.obs;
 
-  var transactions = [].obs; // Changed from coinsList to transactions
+  var transactions = [].obs;
 
-  // FIX: This must stay reactive for your KycPage to work
   var kycStatus = '00'.obs;
   var walletBal = 'Loading..'.obs;
 
   @override
   void onInit() {
     super.onInit();
-    // Load local cache immediately so the UI isn't empty on launch
     userProfile.value = box.read("profile") ?? {};
-    bankAccounts.value = box.read("profile")["bank_accts"] ?? [];
-    walletBal.value = box.read('balance');
-    print(walletBal);
-    // Load saved KYC status
+    bankAccounts.value = box.read("profile")?["bank_accts"] ?? [];
+    walletBal.value = box.read('balance') ?? '0.00';
     kycStatus.value = box.read("kyc_status") ?? '00';
 
     getUserProfile();
@@ -38,18 +32,12 @@ class MainController extends GetxController {
   Future<void> getTransactions() async {
     try {
       isLoading.value = true;
-      String? token = box.read("token");
-      final response = await http.get(
-        Uri.parse("https://mktdata.com.ng/user/api/airtime_historyPHP.php"),
-        headers: {"Authorization": token ?? ""},
-      );
-
+      final response = await api.get('airtime_historyPHP.php');
       if (response.statusCode == 200) {
-        var data = jsonDecode(response.body);
-        transactions.value = data;
+        transactions.value = response.data;
       }
     } catch (e) {
-      print("History Error: $e");
+
     } finally {
       isLoading.value = false;
     }
@@ -57,29 +45,18 @@ class MainController extends GetxController {
 
   void getUserProfile() async {
     try {
-      final response = await http.get(
-        Uri.parse("https://mktdata.com.ng/user/api/current_user_state.php"),
-        headers: {
-          "Content-Type": "application/json",
-          "Accept":
-              "application/json", // Added to ensure server knows we want JSON back
-          "Authorization": box.read('token'),
-        },
-      );
+      final response = await api.get('current_user_state.php');
       if (response.statusCode == 200) {
-        Map<String, dynamic> profileData = jsonDecode(response.body);
+        Map<String, dynamic> profileData = response.data;
         await box.write("userData", profileData);
         getTransactions();
-        // Safely update balance
         if (profileData.containsKey('balance')) {
           await box.write("balance", profileData['balance'].toString());
+          walletBal.value = profileData['balance'].toString();
         }
-      } else if (response.statusCode == 401) {
-        // Handle expired token if necessary
-        print("Token expired or unauthorized");
       }
     } catch (e) {
-      print("Error fetching profile: $e");
+
     }
   }
 }

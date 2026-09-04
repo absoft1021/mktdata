@@ -32,7 +32,7 @@ class RegisterController extends GetxController {
           "ref": referer ?? "",
         },
       );
-      print(response.body);
+
 
       final data = jsonDecode(response.body);
 

@@ -50,7 +50,7 @@ class ChangePasswordController extends GetxController {
         );
       }
     } on d.DioException catch (e) {
-      String msg = e.response?.data['response'] ?? "Failed to update password";
+      String msg = (e.response?.data is Map) ? (e.response?.data['response'] ?? "Failed to update password") : "Failed to update password";
       Get.snackbar(
         "Error",
         msg,

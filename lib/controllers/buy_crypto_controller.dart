@@ -49,7 +49,7 @@ class BuyCryptoController extends GetxController {
         }
       }
     } catch (e) {
-      print("Calculation API Error: $e");
+
       calcResult.clear();
     } finally {
       isLoading.value = false;
@@ -72,9 +72,9 @@ class BuyCryptoController extends GetxController {
           "coin_amount": coinAmount,
           "wallet_address": walletAddress,
           "coin_type": coinType,
-          "trans_pin": box.read("profile")['trans_pin'] ?? "",
+          "trans_pin": box.read("profile")?['trans_pin'] ?? "",
         },
-        headers: {"Accepts": "application/json", "Authorization": token ?? ""},
+        headers: {"Accept": "application/json", "Authorization": token ?? ""},
       );
       final data = jsonDecode(response.body);
 

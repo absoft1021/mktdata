@@ -2,12 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:mktdata/controllers/change_password_controller.dart';
 
-class ChangePasswordPage extends StatelessWidget {
+class ChangePasswordPage extends StatefulWidget {
   ChangePasswordPage({super.key});
 
+  @override
+  State<ChangePasswordPage> createState() => _ChangePasswordPageState();
+}
+
+class _ChangePasswordPageState extends State<ChangePasswordPage> {
   final c = Get.put(ChangePasswordController());
   final currentPassController = TextEditingController();
   final newPassController = TextEditingController();
+
+  @override
+  void dispose() {
+    currentPassController.dispose();
+    newPassController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

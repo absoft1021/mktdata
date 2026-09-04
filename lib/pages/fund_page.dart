@@ -20,7 +20,7 @@ class _FundPageState extends State<FundPage> {
   @override
   void initState() {
     super.initState();
-    accounts = box.read("profile")["bank_accts"] ?? [];
+    accounts = box.read("profile")?["bank_accts"] ?? [];
   }
 
   @override
@@ -93,9 +93,9 @@ class _FundPageState extends State<FundPage> {
                       (context, index) => const SizedBox(height: 12),
                   itemBuilder: (context, index) {
                     return _buildAccountCard(
-                      bank: accounts[index][1]!,
-                      accNo: accounts[index][0]!,
-                      name: accounts[index][2]!,
+                      bank: accounts[index][1]?.toString() ?? '',
+                      accNo: accounts[index][0]?.toString() ?? '',
+                      name: accounts[index][2]?.toString() ?? '',
                       isDark: isDark,
                     );
                   },

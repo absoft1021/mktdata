@@ -10,17 +10,40 @@ class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
   @override
-  _LoginPageState createState() => _LoginPageState();
+  State<LoginPage> createState() => _LoginPageState();
 }
 
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final LoginController c = LoginController();
+  final LoginController c = Get.put(LoginController());
   final box = GetStorage();
 
   bool _isObscured = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkSessionExpired();
+  }
+
+  void _checkSessionExpired() {
+    final args = Get.arguments;
+    if (args != null && args['sessionExpired'] == true) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Get.snackbar(
+          'Session Expired',
+          'Your session has expired. Please login again.',
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Colors.orange,
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(15),
+          duration: const Duration(seconds: 4),
+        );
+      });
+    }
+  }
 
   void _handleLogin() async {
     if (_formKey.currentState!.validate()) {

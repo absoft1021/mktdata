@@ -115,7 +115,7 @@ class _HomeScreenState extends State<HomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "${c.box.read('userData')['username'].toString().capitalizeFirst}",
+                  "${c.box.read('userData')?['username']?.toString().capitalizeFirst ?? ''}",
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -124,8 +124,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 Text(
                   c.box
-                          .read('userData')['user_type']
-                          .toString()
+                          .read('userData')?['user_type']
+                          ?.toString()
                           .capitalizeFirst ??
                       'Welcome back',
                   style: TextStyle(fontSize: 12, color: theme.hintColor),

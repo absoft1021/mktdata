@@ -2,16 +2,14 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:mktdata/auth/resume_page.dart';
 import 'package:mktdata/main_page.dart';
+import 'package:mktdata/utils/api_client.dart';
 
 class LoginController extends GetxController {
   final box = GetStorage();
-  final String loginUrl = "https://mktdata.com.ng/user/api/loginPHP.php";
-  final String profileUrl =
-      "https://mktdata.com.ng/user/api/current_user_state.php";
+  final api = ApiClient.to;
 
   var isLoading = false.obs;
 
@@ -22,23 +20,21 @@ class LoginController extends GetxController {
     }
   }
 
-  // --- Login Request ---
   void login(String username, String password) async {
     try {
       isLoading.value = true;
-      final response = await http.post(
-        Uri.parse(loginUrl),
-        headers: {"Content-Type": "application/x-www-form-urlencoded"},
-        body: {"username": username, "password": password, "submit": "true"},
+      final response = await api.dio.post(
+        'loginPHP.php',
+        data: {'username': username, 'password': password, 'submit': 'true'},
+        options: Options(contentType: Headers.formUrlEncodedContentType),
       );
 
       isLoading.value = false;
 
       if (response.statusCode == 200) {
-        Map<String, dynamic> data = jsonDecode(response.body);
+        Map<String, dynamic> data = response.data;
 
         if (data['success'] == 1 || data['success'] == "1") {
-          // Robust Null Checks for Profile
           var profile = data['profile'];
           if (profile != null) {
             await box.write("profile", profile);
@@ -66,39 +62,27 @@ class LoginController extends GetxController {
     }
   }
 
-  // --- Get User Profile Request ---
   void getUserProfile() async {
     try {
-      final response = await http.get(
-        Uri.parse("https://mktdata.com.ng/user/api/current_user_state.php"),
-        headers: {
-          "Content-Type": "application/json",
-          "Accept":
-              "application/json", // Added to ensure server knows we want JSON back
-          "Authorization": box.read('token'),
-        },
-      );
-      print(response.body);
+      final response = await api.get('current_user_state.php');
       if (response.statusCode == 200) {
-        Map<String, dynamic> profileData = jsonDecode(response.body);
+        Map<String, dynamic> profileData = response.data;
         await box.write("userData", profileData);
 
-        // Safely update balance
         if (profileData.containsKey('balance')) {
           await box.write("balance", profileData['balance'].toString());
-
-          Get.offAll(() => MainPage());
         }
-      } else if (response.statusCode == 401) {
-        // Handle expired token if necessary
-        print("Token expired or unauthorized");
+        Get.offAll(() => MainPage());
+      } else {
+        _showErrorSnackbar("Error", "Failed to load profile");
+        isLoading.value = false;
       }
     } catch (e) {
-      print("Error fetching profile: $e");
+      _showErrorSnackbar("Error", "Failed to load profile");
+      isLoading.value = false;
     }
   }
 
-  // Helper for cleaner code
   void _showErrorSnackbar(String title, String message) {
     Get.snackbar(
       title,

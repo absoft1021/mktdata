@@ -12,7 +12,7 @@ class RegisterPage extends StatefulWidget {
 
 class _RegisterPageState extends State<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
-  final _registerController = RegisterController();
+  final _registerController = Get.put(RegisterController());
 
   // Text Controllers
   final _fnameController = TextEditingController();
@@ -222,8 +222,8 @@ class _RegisterPageState extends State<RegisterPage> {
           if (isRequired && (val == null || val.isEmpty)) {
             return "$label is required";
           }
-          if (isEmail && !val!.contains('@')) return "Enter valid email";
-          if (isPin && val!.length != 4) return "PIN must be 4 digits";
+          if (isEmail && !(val?.contains('@') ?? false)) return "Enter valid email";
+          if (isPin && (val?.length ?? 0) != 4) return "PIN must be 4 digits";
           return null;
         },
       ),

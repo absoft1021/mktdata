@@ -3,12 +3,24 @@ import 'package:get/get.dart';
 import 'package:mktdata/controllers/cable_controller.dart';
 import 'package:mktdata/components/pin_bottom_sheet.dart';
 
-class CablePage extends StatelessWidget {
+class CablePage extends StatefulWidget {
   CablePage({super.key});
 
+  @override
+  State<CablePage> createState() => _CablePageState();
+}
+
+class _CablePageState extends State<CablePage> {
   final c = Get.put(CableController());
   final meterController = TextEditingController();
   final amountController = TextEditingController();
+
+  @override
+  void dispose() {
+    meterController.dispose();
+    amountController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

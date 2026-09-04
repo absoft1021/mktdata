@@ -24,6 +24,6 @@ class ProfileController extends GetxController {
 
   void logout() {
     box.erase();
-    Get.offAllNamed('/login'); // Redirect to login
+    Get.offAll(() => LoginPage());
   }
 }

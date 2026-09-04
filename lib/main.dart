@@ -3,12 +3,14 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:mktdata/auth/login_page.dart';
 import 'package:mktdata/auth/resume_page.dart';
+import 'package:mktdata/utils/api_client.dart';
 import 'package:mktdata/utils/app_colors.dart';
 //import 'package:onesignal_flutter/onesignal_flutter.dart';
 
 
 void main() async {
   await GetStorage.init();
+  Get.put(ApiClient());
 
   // OneSignal.initialize("5d81d1f9-35d5-4418-a6e0-dfcc0ff0f7cc");
   // OneSignal.Notifications.requestPermission(true);
@@ -22,6 +24,9 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final box = GetStorage();
+    final token = box.read('token');
+    final profile = box.read('profile');
+    final hasValidSession = token != null && token.isNotEmpty && profile != null;
 
     return GetMaterialApp(
       title: 'MKTdata',
@@ -51,10 +56,7 @@ class MyApp extends StatelessWidget {
 
       themeMode: ThemeMode.system,
 
-      home:
-          box.read('token') == null || box.read('token').isEmpty
-              ? LoginPage()
-              : ResumePage(),
+      home: hasValidSession ? ResumePage() : LoginPage(),
     );
   }
 }

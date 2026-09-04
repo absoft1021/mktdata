@@ -7,6 +7,7 @@ class ExamController extends GetxController {
   var isLoading = false.obs;
   var selectedExam = 'WAEC'.obs;
   var price = '₦0.00'.obs;
+  Timer? _timer;
   
   // Data list
   final List<Map<String, String>> examList = [
@@ -21,6 +22,12 @@ class ExamController extends GetxController {
     super.onInit();
     // Fetch initial price for default selection
     fetchPrice('waec');
+  }
+
+  @override
+  void onClose() {
+    _timer?.cancel();
+    super.onClose();
   }
 
   void fetchPrice(String examTitle) async {
@@ -42,7 +49,7 @@ class ExamController extends GetxController {
   void processPurchase() async {
     isLoading.value = true;
     // Simulate your TimerTask logic
-    Timer(Duration(milliseconds: 1200), () {
+    _timer = Timer(Duration(milliseconds: 1200), () {
       isLoading.value = false;
       Get.defaultDialog(
         title: "",

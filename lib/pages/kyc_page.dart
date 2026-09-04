@@ -3,9 +3,14 @@ import 'package:get/get.dart';
 import 'package:mktdata/controllers/kyc_controller.dart';
 import 'package:mktdata/controllers/main_controller.dart';
 
-class KycPage extends StatelessWidget {
+class KycPage extends StatefulWidget {
   KycPage({super.key});
 
+  @override
+  State<KycPage> createState() => _KycPageState();
+}
+
+class _KycPageState extends State<KycPage> {
   // Injecting/Finding Controllers
   final c = Get.put(KycController());
   final mainC = Get.find<MainController>();
@@ -15,6 +20,15 @@ class KycPage extends StatelessWidget {
   final bvnController = TextEditingController();
   final addressController = TextEditingController();
   final pinController = TextEditingController();
+
+  @override
+  void dispose() {
+    ninController.dispose();
+    bvnController.dispose();
+    addressController.dispose();
+    pinController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

@@ -104,7 +104,7 @@ class _SetPinPageState extends State<SetPinPage> {
               const SizedBox(height: 40),
 
               // --- New PIN Field ---
-              _label("CURRENT PIN"),
+              _label("NEW PIN"),
               TextFormField(
                 controller: _pinController,
                 obscureText: _obscurePin,

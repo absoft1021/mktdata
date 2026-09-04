@@ -24,7 +24,7 @@ class _MoreScreenState extends State<MoreScreen> {
   @override
   void initState() {
     super.initState();
-    c.kycStatus.value = box.read('profile')['kyc'] ?? '11';
+    c.kycStatus.value = box.read('profile')?['kyc'] ?? '11';
   }
 
   @override
@@ -189,7 +189,7 @@ class _MoreScreenState extends State<MoreScreen> {
         ),
         const SizedBox(height: 16),
         Text(
-          c.box.read("userData")['full_name'],
+          c.box.read("userData")?['full_name'] ?? '',
           style: TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.bold,

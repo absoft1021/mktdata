@@ -36,8 +36,8 @@ class _PinSheetState extends State<PinSheet> {
     if (_pin.length < 4) {
       setState(() => _pin += val);
       if (_pin.length == 4) {
-        Get.back(); // Auto-close on completion
         widget.onConfirm(_pin);
+        Get.back(); // Auto-close on completion
       }
     }
   }

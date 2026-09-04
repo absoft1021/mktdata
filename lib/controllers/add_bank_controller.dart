@@ -57,7 +57,7 @@ class AddBankController extends GetxController {
       );
 
       if (response.statusCode == 200) {
-        verifiedName.value = response.data['data']['account_name'] ?? "";
+        verifiedName.value = response.data['data']?['account_name'] ?? "";
       } else {
         verifiedName.value = "Account not found";
       }
@@ -116,7 +116,7 @@ class AddBankController extends GetxController {
         );
       }
     } on d.DioException catch (e) {
-      String msg = e.response?.data['response'] ?? "Failed to link bank";
+      String msg = (e.response?.data is Map) ? (e.response?.data['response'] ?? "Failed to link bank") : "Failed to link bank";
       Get.snackbar(
         "Error",
         msg,

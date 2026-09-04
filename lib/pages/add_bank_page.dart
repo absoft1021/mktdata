@@ -131,6 +131,7 @@ class _AddBankPageState extends State<AddBankPage> {
             onChanged: (val) {
               final bank = c.banks.firstWhere(
                 (b) => b['bank_code'].toString() == val,
+                orElse: () => {},
               );
               c.selectedBankCode.value = val!;
               c.selectedBankName.value = bank['bank_name'];

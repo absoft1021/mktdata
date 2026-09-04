@@ -27,7 +27,7 @@ class _ResumePageState extends State<ResumePage> {
   void initState() {
     super.initState();
     // Fetch user data from storage
-    username = box.read("profile")['username'] ?? "User";
+    username = box.read("profile")?['username'] ?? "User";
     savedPin = box.read('pin') ?? "";
 
     // Auto-trigger biometrics on entry
@@ -40,10 +40,7 @@ class _ResumePageState extends State<ResumePage> {
     final isAuthenticated = await LocalAuthApi.authenticate();
 
     if (isAuthenticated) {
-      // Fluttertoast.showToast(
-      //     msg: 'Access Granted',
-      //     backgroundColor: Colors.blue);
-      Get.to(const MainPage());
+      Get.offAll(() => const MainPage());
     }
   }
 
