@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:mktdata/auth/resume_page.dart';
 import 'package:mktdata/main_page.dart';
 import 'package:mktdata/utils/api_client.dart';
+import 'package:dio/dio.dart';
 
 class LoginController extends GetxController {
   final box = GetStorage();
