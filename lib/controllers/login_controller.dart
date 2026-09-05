@@ -84,7 +84,7 @@ class LoginController extends GetxController {
       final response = await http.get(
         Uri.parse('${baseUrl}current_user_state.php'),
         headers: {
-          'Authorization': 'Bearer $token',
+          'Authorization': '$token',
           'Content-Type': 'application/json',
         },
       );
