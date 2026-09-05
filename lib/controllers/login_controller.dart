@@ -2,15 +2,13 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
-import 'package:mktdata/auth/resume_page.dart';
 import 'package:mktdata/main_page.dart';
-import 'package:mktdata/utils/api_client.dart';
-import 'package:dio/dio.dart';
 
 class LoginController extends GetxController {
   final box = GetStorage();
-  final api = ApiClient.to;
+  static const String baseUrl = 'https://mktdata.com.ng/user/api/';
 
   var isLoading = false.obs;
 
@@ -21,49 +19,46 @@ class LoginController extends GetxController {
     }
   }
 
-  /// Dio only auto-decodes JSON when the response Content-Type header says
-  /// application/json. If the PHP endpoint returns text/html (or has stray
-  /// output before the JSON), response.data comes back as a raw String
-  /// instead of a Map, which crashes a direct `Map<String, dynamic> data =
-  /// response.data` assignment. This normalizes either case.
   Map<String, dynamic> _asMap(dynamic raw) {
     if (raw is Map<String, dynamic>) return raw;
     if (raw is String) {
+      if (raw.trim().isEmpty) {
+        throw FormatException('Empty string instead of JSON object');
+      }
       final decoded = jsonDecode(raw);
       if (decoded is Map<String, dynamic>) return decoded;
-      throw FormatException(
-        'Expected a JSON object but got ${decoded.runtimeType}',
-      );
+      throw FormatException('Expected a JSON object but got ${decoded.runtimeType}');
     }
-    throw FormatException(
-      'Expected a JSON object but got ${raw.runtimeType}',
-    );
+    throw FormatException('Expected a JSON object but got ${raw.runtimeType}');
   }
 
   void login(String username, String password) async {
     try {
       isLoading.value = true;
-      final response = await api.dio.post(
-        'loginPHP.php',
-        data: {'username': username, 'password': password, 'submit': 'true'},
-        options: Options(contentType: Headers.formUrlEncodedContentType),
+      final response = await http.post(
+        Uri.parse('${baseUrl}loginPHP.php'),
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: {
+          'username': username,
+          'password': password,
+          'submit': 'true',
+        },
       );
 
       isLoading.value = false;
 
       if (response.statusCode == 200) {
-        final data = _asMap(response.data);
+        final data = _asMap(response.body);
 
         if (data['success'] == 1 || data['success'] == "1") {
           final profileRaw = data['profile'];
-          if (profileRaw != null) {
+          if (profileRaw != null && profileRaw != '') {
             final profile = _asMap(profileRaw);
             await box.write("profile", profile);
             await box.write("telegram", profile['telegram_link'] ?? '');
             await box.write("contact", profile['contact_phone'] ?? '');
             await box.write("token", data['token'] ?? '');
           }
-
           getUserProfile();
         } else {
           _showErrorSnackbar(
@@ -85,9 +80,17 @@ class LoginController extends GetxController {
 
   void getUserProfile() async {
     try {
-      final response = await api.get('current_user_state.php');
+      final token = box.read('token') ?? '';
+      final response = await http.get(
+        Uri.parse('${baseUrl}current_user_state.php'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
       if (response.statusCode == 200) {
-        final profileData = _asMap(response.data);
+        final profileData = _asMap(response.body);
         await box.write("userData", profileData);
 
         if (profileData.containsKey('balance')) {
