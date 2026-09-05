@@ -14,6 +14,7 @@ class DataController extends GetxController {
 
   RxString selectedNetwork = "".obs;
   RxString selectedType = "".obs;
+  String selectedAmount = "";
   RxMap selectedPlan = {}.obs;
 
   RxList dataTypes = [].obs;
@@ -37,6 +38,7 @@ class DataController extends GetxController {
       "price": plan[1].toString(),
       "id": plan[2].toString(),
     };
+    selectedAmount = plan[1].toString(); // price
   }
 
   Future<void> fetchDataTypes() async {
@@ -117,7 +119,7 @@ class DataController extends GetxController {
           "mNetwork": selectedNetwork.value.toLowerCase(),
           "plan_id": selectedPlan['id'] ?? '',
           "trans_pin": box.read("profile")?['trans_pin'] ?? pin,
-          "amount": selectedPlan['price'] ?? '',
+          "amount": selectedAmount.isNotEmpty ? selectedAmount : (selectedPlan['price'] ?? ''),
           "submit": "Buy",
         },
       );
