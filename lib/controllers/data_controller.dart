@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -7,14 +8,14 @@ import 'package:mktdata/components/abdialog.dart';
 
 class DataController extends GetxController {
   final box = GetStorage();
-  static const String baseUrl = 'https://mktdata.com.ng/user/api/';
-
   RxBool isLoading = false.obs;
   RxBool isFetchingPlans = false.obs;
 
   RxString selectedNetwork = "".obs;
   RxString selectedType = "".obs;
   String selectedAmount = "";
+
+  // We use RxMap to track selection
   RxMap selectedPlan = {}.obs;
 
   RxList dataTypes = [].obs;
@@ -27,13 +28,19 @@ class DataController extends GetxController {
     {"title": "9mobile", "logo": "assets/mobile.png"},
   ];
 
+  @override
+  void onInit() {
+    super.onInit();
+    fetchDataTypes();
+  }
+
+  // Method to handle clean selection and UI refresh
   void selectPlan(List plan) {
     selectedPlan.value = {
       "name": plan[0].toString(),
       "price": plan[1].toString(),
-      "id": plan[2].toString(),
+      "id": plan[2].toString(), // Forced to string for comparison
     };
-    selectedAmount = plan[1].toString(); // price
   }
 
   Future<void> fetchDataTypes() async {
@@ -41,25 +48,18 @@ class DataController extends GetxController {
       dataTypes.clear();
       dataPlans.clear();
       selectedPlan.clear();
-      selectedAmount = "";
 
-      final token = box.read('token') ?? '';
       final response = await http.post(
-        Uri.parse('${baseUrl}fetch_data_type.php'),
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Accept': 'application/json',
-          if (token.toString().isNotEmpty) 'Authorization': token.toString(),
-        },
+        Uri.parse("https://mktdata.com.ng/user/api/fetch_data_type.php"),
         body: {"mNetwork": selectedNetwork.value.toLowerCase()},
+        headers: {"Authorization": box.read("token") ?? ""},
       );
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        dataTypes.value = data is List ? data : [];
+        dataTypes.value = jsonDecode(response.body);
         if (dataTypes.isNotEmpty) {
-          selectedType.value = dataTypes[0][2].toString();
-          await fetchDataPlans();
+          selectedType.value = dataTypes[0][2];
+          fetchDataPlans();
         }
       }
     } catch (e) {
@@ -72,28 +72,19 @@ class DataController extends GetxController {
       isFetchingPlans.value = true;
       dataPlans.clear();
       selectedPlan.clear();
-      selectedAmount = "";
 
-      final token = box.read('token') ?? '';
       final response = await http.post(
-        Uri.parse('${baseUrl}dataPrice.php'),
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Accept': 'application/json',
-          if (token.toString().isNotEmpty) 'Authorization': token.toString(),
-        },
+        Uri.parse("https://mktdata.com.ng/user/api/dataPrice.php"),
         body: {
           "mNetwork": selectedNetwork.value.toLowerCase(),
           "mType": selectedType.value,
         },
+        headers: {"Authorization": box.read("token") ?? ""},
       );
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        dataPlans.value = data is List ? data : [];
+        dataPlans.value = jsonDecode(response.body);
       }
-    } catch (e) {
-      debugPrint("Plans Error: $e");
     } finally {
       isFetchingPlans.value = false;
     }
@@ -102,36 +93,36 @@ class DataController extends GetxController {
   Future<void> buyData({required String phone, required String pin}) async {
     try {
       isLoading.value = true;
-      final token = box.read('token') ?? '';
       final response = await http.post(
-        Uri.parse('${baseUrl}buy_dataPHP.php'),
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Accept': 'application/json',
-          if (token.toString().isNotEmpty) 'Authorization': token.toString(),
-        },
+        Uri.parse("https://mktdata.com.ng/user/api/buy_dataPHP.php"),
+        headers: {"Authorization": box.read("token") ?? ""},
         body: {
           "mobileNumber": phone,
           "mNetwork": selectedNetwork.value.toLowerCase(),
-          "plan_id": selectedPlan['id'] ?? '',
-          "trans_pin": box.read("profile")?['trans_pin'] ?? pin,
+          "plan_id": selectedPlan['id'],
+          "trans_pin": box.read("profile")['trans_pin'] ?? "",
           "amount": selectedAmount,
           "submit": "Buy",
         },
       );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if ((data['sWrong'] ?? '').toString().isEmpty) {
-          Abdialog().showDialog("Data purchase successful", true);
-        } else {
-          Abdialog().showDialog(data['sWrong'] ?? "Error occurred", false);
-        }
+      final data = jsonDecode(response.body);
+      if (data['sWrong'].toString().isEmpty) {
+        Abdialog().showDialog("Data purchase successful", true);
+        // Get.snackbar(
+        //   "Success",
+        //   "Data purchase successful!",
+        //   backgroundColor: Colors.green,
+        //   colorText: Colors.white,
+        // );
       } else {
-        Abdialog().showDialog("Server error: ${response.statusCode}", false);
+        Abdialog().showDialog(data['sWrong'] ?? "Error occurred", false);
+        // Get.snackbar(
+        //   "Failed",
+        //   data['sWrong'] ?? "Transaction failed",
+        //   backgroundColor: Colors.redAccent,
+        //   colorText: Colors.white,
+        // );
       }
-    } catch (e) {
-      Abdialog().showDialog("Check your connection", false);
     } finally {
       isLoading.value = false;
     }
