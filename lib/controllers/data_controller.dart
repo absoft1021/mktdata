@@ -27,11 +27,6 @@ class DataController extends GetxController {
     {"title": "9mobile", "logo": "assets/mobile.png"},
   ];
 
-  @override
-  void onInit() {
-    super.onInit();
-  }
-
   void selectPlan(List plan) {
     selectedPlan.value = {
       "name": plan[0].toString(),
@@ -46,14 +41,15 @@ class DataController extends GetxController {
       dataTypes.clear();
       dataPlans.clear();
       selectedPlan.clear();
-      final token = box.read('token') ?? '';
+      selectedAmount = "";
 
+      final token = box.read('token') ?? '';
       final response = await http.post(
         Uri.parse('${baseUrl}fetch_data_type.php'),
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
           'Accept': 'application/json',
-          if (token.isNotEmpty) 'Authorization': token,
+          if (token.toString().isNotEmpty) 'Authorization': token.toString(),
         },
         body: {"mNetwork": selectedNetwork.value.toLowerCase()},
       );
@@ -63,7 +59,7 @@ class DataController extends GetxController {
         dataTypes.value = data is List ? data : [];
         if (dataTypes.isNotEmpty) {
           selectedType.value = dataTypes[0][2].toString();
-          fetchDataPlans();
+          await fetchDataPlans();
         }
       }
     } catch (e) {
@@ -76,14 +72,15 @@ class DataController extends GetxController {
       isFetchingPlans.value = true;
       dataPlans.clear();
       selectedPlan.clear();
-      final token = box.read('token') ?? '';
+      selectedAmount = "";
 
+      final token = box.read('token') ?? '';
       final response = await http.post(
         Uri.parse('${baseUrl}dataPrice.php'),
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
           'Accept': 'application/json',
-          if (token.isNotEmpty) 'Authorization': token,
+          if (token.toString().isNotEmpty) 'Authorization': token.toString(),
         },
         body: {
           "mNetwork": selectedNetwork.value.toLowerCase(),
@@ -106,20 +103,19 @@ class DataController extends GetxController {
     try {
       isLoading.value = true;
       final token = box.read('token') ?? '';
-
       final response = await http.post(
         Uri.parse('${baseUrl}buy_dataPHP.php'),
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
           'Accept': 'application/json',
-          if (token.isNotEmpty) 'Authorization': token,
+          if (token.toString().isNotEmpty) 'Authorization': token.toString(),
         },
         body: {
           "mobileNumber": phone,
           "mNetwork": selectedNetwork.value.toLowerCase(),
           "plan_id": selectedPlan['id'] ?? '',
           "trans_pin": box.read("profile")?['trans_pin'] ?? pin,
-          "amount": selectedAmount.isNotEmpty ? selectedAmount : (selectedPlan['price'] ?? ''),
+          "amount": selectedAmount,
           "submit": "Buy",
         },
       );

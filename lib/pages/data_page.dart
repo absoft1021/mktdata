@@ -126,7 +126,6 @@ class _BuyDataPageState extends State<BuyDataPage>
           child: Container(
             margin: const EdgeInsets.only(bottom: 20),
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
-            decoration: const BoxDecoration(color: Colors.transparent),
             child: SizedBox(
               height: 54,
               child: ElevatedButton(
@@ -138,25 +137,24 @@ class _BuyDataPageState extends State<BuyDataPage>
                   ),
                 ),
                 onPressed: c.isLoading.value ? null : _handleProceed,
-                child:
-                    c.isLoading.value
-                        ? const SizedBox(
-                          width: 22,
-                          height: 22,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2.5,
-                          ),
-                        )
-                        : const Text(
-                          "PROCEED TO PAYMENT",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 13,
-                            letterSpacing: 0.8,
-                          ),
+                child: c.isLoading.value
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2.5,
                         ),
+                      )
+                    : const Text(
+                        "PROCEED TO PAYMENT",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
               ),
             ),
           ),
@@ -168,79 +166,72 @@ class _BuyDataPageState extends State<BuyDataPage>
   Widget _buildNetworkGrid(bool isDark, Color cardBg) {
     return Obx(
       () => Row(
-        children:
-            c.networks.map((net) {
-              final isSelected = c.selectedNetwork.value == net['title'];
-              return Expanded(
-                child: GestureDetector(
-                  onTap: () {
-                    c.selectedNetwork.value = net['title']!;
-                    c.fetchDataTypes();
-                  },
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    margin: const EdgeInsets.only(right: 8),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    decoration: BoxDecoration(
-                      color:
-                          isSelected
-                              ? _brandLight
-                              : (isDark ? Colors.white10 : cardBg),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color:
-                            isSelected ? _brand : Colors.transparent,
-                        width: 1.8,
-                      ),
-                      boxShadow:
-                          isSelected
-                              ? [
-                                BoxShadow(
-                                  color: _brand.withValues(alpha: 0.12),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 3),
-                                ),
-                              ]
-                              : [],
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        CircleAvatar(
-                          radius: 18,
-                          backgroundColor:
-                              isDark ? Colors.white12 : Colors.grey[100],
-                          child: Padding(
-                            padding: const EdgeInsets.all(6),
-                            child: Image.asset(
-                              net['logo']!,
-                              fit: BoxFit.contain,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 5),
-                        Text(
-                          net['title']!,
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight:
-                                isSelected
-                                    ? FontWeight.w700
-                                    : FontWeight.w500,
-                            color:
-                                isSelected
-                                    ? _brand
-                                    : (isDark
-                                        ? Colors.white60
-                                        : Colors.black54),
-                          ),
-                        ),
-                      ],
-                    ),
+        children: c.networks.map((net) {
+          final isSelected =
+              c.selectedNetwork.value.toLowerCase() ==
+              net['title']!.toLowerCase();
+          return Expanded(
+            child: GestureDetector(
+              onTap: () {
+                c.selectedNetwork.value = net['title']!.toLowerCase();
+                c.fetchDataTypes();
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                margin: const EdgeInsets.only(right: 8),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? _brandLight
+                      : (isDark ? Colors.white10 : cardBg),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: isSelected ? _brand : Colors.transparent,
+                    width: 1.8,
                   ),
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: _brand.withValues(alpha: 0.12),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ]
+                      : [],
                 ),
-              );
-            }).toList(),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircleAvatar(
+                      radius: 18,
+                      backgroundColor:
+                          isDark ? Colors.white12 : Colors.grey[100],
+                      child: Padding(
+                        padding: const EdgeInsets.all(6),
+                        child: Image.asset(
+                          net['logo']!,
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      net['title']!,
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight:
+                            isSelected ? FontWeight.w700 : FontWeight.w500,
+                        color: isSelected
+                            ? _brand
+                            : (isDark ? Colors.white60 : Colors.black54),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }).toList(),
       ),
     );
   }
@@ -250,47 +241,44 @@ class _BuyDataPageState extends State<BuyDataPage>
       () => SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
-          children:
-              c.dataTypes.map((t) {
-                final isSelected = c.selectedType.value == t[2];
-                return GestureDetector(
-                  onTap: () {
-                    c.selectedType.value = t[2];
-                    c.fetchDataPlans();
-                  },
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 180),
-                    margin: const EdgeInsets.only(right: 8),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color:
-                          isSelected
-                              ? _brand
-                              : (isDark ? Colors.white10 : Colors.white),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: isSelected ? _brand : Colors.grey.shade300,
-                        width: 1,
-                      ),
-                    ),
-                    child: Text(
-                      t[1],
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight:
-                            isSelected ? FontWeight.w600 : FontWeight.w400,
-                        color:
-                            isSelected
-                                ? Colors.white
-                                : (isDark ? Colors.white60 : Colors.black87),
-                      ),
-                    ),
+          children: c.dataTypes.map((t) {
+            final isSelected = c.selectedType.value == t[2].toString();
+            return GestureDetector(
+              onTap: () {
+                c.selectedType.value = t[2].toString();
+                c.fetchDataPlans();
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                margin: const EdgeInsets.only(right: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? _brand
+                      : (isDark ? Colors.white10 : Colors.white),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: isSelected ? _brand : Colors.grey.shade300,
+                    width: 1,
                   ),
-                );
-              }).toList(),
+                ),
+                child: Text(
+                  t[1].toString(),
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight:
+                        isSelected ? FontWeight.w600 : FontWeight.w400,
+                    color: isSelected
+                        ? Colors.white
+                        : (isDark ? Colors.white60 : Colors.black87),
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
         ),
       ),
     );
@@ -315,7 +303,7 @@ class _BuyDataPageState extends State<BuyDataPage>
           color: isDark ? Colors.white : Colors.black87,
         ),
         decoration: InputDecoration(
-          hintText: "08012345678",
+          hintText: "Phone Number",
           hintStyle: TextStyle(
             color: isDark ? Colors.white30 : Colors.black26,
             fontSize: 14,
@@ -384,8 +372,7 @@ class _BuyDataPageState extends State<BuyDataPage>
               isSelected: isSel,
               isDark: isDark,
               onTap: () {
-                c.selectedAmount = plan[2].toString();
-                c.selectPlan(plan);
+                c.selectPlan(plan); // sets selectedAmount = price correctly
                 _validate();
               },
             );
@@ -395,8 +382,6 @@ class _BuyDataPageState extends State<BuyDataPage>
     });
   }
 }
-
-// ─── Section wrapper ──────────────────────────────────────────────────────────
 
 class _Section extends StatelessWidget {
   const _Section({required this.label, required this.child});
@@ -429,8 +414,6 @@ class _Section extends StatelessWidget {
   }
 }
 
-// ─── Plan card ────────────────────────────────────────────────────────────────
-
 class _PlanCard extends StatelessWidget {
   const _PlanCard({
     required this.name,
@@ -456,12 +439,11 @@ class _PlanCard extends StatelessWidget {
         duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(
-          color:
-              isSelected
-                  ? _brand.withValues(alpha: 0.08)
-                  : (isDark
-                      ? Colors.white.withValues(alpha: 0.05)
-                      : Colors.white),
+          color: isSelected
+              ? _brand.withValues(alpha: 0.08)
+              : (isDark
+                  ? Colors.white.withValues(alpha: 0.05)
+                  : Colors.white),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? _brand : Colors.grey.withValues(alpha: 0.15),
@@ -479,10 +461,9 @@ class _PlanCard extends StatelessWidget {
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                color:
-                    isSelected
-                        ? _brand
-                        : (isDark ? Colors.white70 : Colors.black87),
+                color: isSelected
+                    ? _brand
+                    : (isDark ? Colors.white70 : Colors.black87),
                 height: 1.3,
               ),
             ),
@@ -501,8 +482,6 @@ class _PlanCard extends StatelessWidget {
     );
   }
 }
-
-// ─── Skeleton loader ──────────────────────────────────────────────────────────
 
 class _PlanSkeletonGrid extends StatefulWidget {
   const _PlanSkeletonGrid({required this.isDark});
@@ -549,14 +528,13 @@ class _PlanSkeletonGridState extends State<_PlanSkeletonGrid>
             childAspectRatio: 2.4,
           ),
           itemCount: 6,
-          itemBuilder:
-              (_, __) => Container(
-                decoration: BoxDecoration(
-                  color: (widget.isDark ? Colors.white : Colors.black)
-                      .withValues(alpha: opacity),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
+          itemBuilder: (_, __) => Container(
+            decoration: BoxDecoration(
+              color: (widget.isDark ? Colors.white : Colors.black)
+                  .withValues(alpha: opacity),
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
         );
       },
     );
