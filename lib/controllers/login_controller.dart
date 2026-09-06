@@ -100,9 +100,13 @@ class LoginController extends GetxController {
         if (profileData.containsKey('balance')) {
           await box.write("balance", profileData['balance'].toString());
         }
-        String savedPin = box.read('pin') ?? null;
-        
-        Get.offAll(() => savedPin ? MainPage() : SetPinPage());
+        String? savedPin = box.read('pin');
+
+        Get.offAll(
+          () => savedPin != null && savedPin.isNotEmpty
+              ? MainPage()
+              : SetPinPage(),
+        );
         
       } else {
         _showErrorSnackbar("Error", "Failed to load profile");
