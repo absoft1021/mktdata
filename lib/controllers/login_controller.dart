@@ -53,6 +53,9 @@ class LoginController extends GetxController {
         if (data['success'] == 1 || data['success'] == "1") {
           final profileRaw = data['profile'];
           if (profileRaw != null && profileRaw != '') {
+            await box.write("username", username ?? '');
+            await box.write("password", password ?? '');
+            
             final profile = _asMap(profileRaw);
             await box.write("profile", profile);
             await box.write("telegram", profile['telegram_link'] ?? '');

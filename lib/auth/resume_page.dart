@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:http/http.dart' as http;
 import 'package:local_auth/local_auth.dart';
 import 'package:mktdata/main_page.dart';
 import 'package:mktdata/utils/app_colors.dart';
@@ -19,32 +21,78 @@ class _ResumePageState extends State<ResumePage> {
   final LocalAuthentication auth = LocalAuthentication();
   String _inputPin = "";
   final int _pinLength = 4;
+  bool _isLoggingIn = false;
 
   late String username;
   late String savedPin;
 
+  static const String baseUrl = 'https://mktdata.com.ng/user/api/';
+
   @override
   void initState() {
     super.initState();
-    // Fetch user data from storage
     username = box.read("profile")?['username'] ?? "User";
     savedPin = box.read('pin') ?? "";
 
-    // Auto-trigger biometrics on entry
     WidgetsBinding.instance.addPostFrameCallback(
       (_) => _authenticateBiometric(),
     );
   }
 
+  Map<String, dynamic> _asMap(dynamic raw) {
+    if (raw is Map<String, dynamic>) return raw;
+    if (raw is String) {
+      if (raw.trim().isEmpty) {
+        throw FormatException('Empty string instead of JSON object');
+      }
+      final decoded = jsonDecode(raw);
+      if (decoded is Map<String, dynamic>) return decoded;
+      throw FormatException('Expected a JSON object but got ${decoded.runtimeType}');
+    }
+    throw FormatException('Expected a JSON object but got ${raw.runtimeType}');
+  }
+
+  Future<bool> _silentLogin() async {
+    try {
+      final response = await http.post(
+        Uri.parse('${baseUrl}loginPHP.php'),
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: {
+          'username': box.read("username") ?? '',
+          'password': box.read("password") ?? '',
+          'submit': 'true',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = _asMap(response.body);
+        if (data['success'] == 1 || data['success'] == "1") {
+          final profileRaw = data['profile'];
+          if (profileRaw != null && profileRaw != '') {
+            final profile = _asMap(profileRaw);
+            await box.write("profile", profile);
+            await box.write("telegram", profile['telegram_link'] ?? '');
+            await box.write("contact", profile['contact_phone'] ?? '');
+            await box.write("token", data['token'] ?? '');
+          }
+          return true;
+        }
+      }
+      return false;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<void> _authenticateBiometric() async {
     final isAuthenticated = await LocalAuthApi.authenticate();
-
     if (isAuthenticated) {
-      Get.offAll(() => const MainPage());
+      await _unlockApp();
     }
   }
 
   void _onKeyTap(String value) {
+    if (_isLoggingIn) return;
     if (_inputPin.length < _pinLength) {
       setState(() => _inputPin += value);
     }
@@ -74,8 +122,25 @@ class _ResumePageState extends State<ResumePage> {
     }
   }
 
-  void _unlockApp() {
-    Get.offAll(() => const MainPage());
+  Future<void> _unlockApp() async {
+    if (_isLoggingIn) return;
+    setState(() => _isLoggingIn = true);
+
+    final success = await _silentLogin();
+
+    setState(() => _isLoggingIn = false);
+
+    if (success) {
+      Get.offAll(() => const MainPage());
+    } else {
+      Get.snackbar(
+        "Session Expired",
+        "Please login again",
+        backgroundColor: Colors.redAccent,
+        colorText: Colors.white,
+      );
+      Get.offAll(() => LoginPage());
+    }
   }
 
   @override
@@ -88,7 +153,6 @@ class _ResumePageState extends State<ResumePage> {
         child: Column(
           children: [
             const SizedBox(height: 60),
-            // --- Welcome Header ---
             Center(
               child: CircleAvatar(
                 radius: 35,
@@ -118,7 +182,7 @@ class _ResumePageState extends State<ResumePage> {
             ),
             const SizedBox(height: 40),
 
-            // --- PIN Dots ---
+            // PIN Dots
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(_pinLength, (index) {
@@ -130,13 +194,13 @@ class _ResumePageState extends State<ResumePage> {
                   height: 12,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color:
-                        isFilled ? AppColors.accentPrimary : Colors.transparent,
+                    color: isFilled
+                        ? AppColors.accentPrimary
+                        : Colors.transparent,
                     border: Border.all(
-                      color:
-                          isFilled
-                              ? AppColors.accentPrimary
-                              : Colors.grey.withValues(alpha: 0.5),
+                      color: isFilled
+                          ? AppColors.accentPrimary
+                          : Colors.grey.withValues(alpha: 0.5),
                       width: 2,
                     ),
                   ),
@@ -144,9 +208,14 @@ class _ResumePageState extends State<ResumePage> {
               }),
             ),
 
+            if (_isLoggingIn) ...[
+              const SizedBox(height: 20),
+              const CircularProgressIndicator(),
+            ],
+
             const Spacer(),
 
-            // --- Number Pad ---
+            // Number Pad
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
               child: Column(
@@ -163,7 +232,6 @@ class _ResumePageState extends State<ResumePage> {
             TextButton(
               onPressed: () {
                 Get.offAll(() => LoginPage());
-                /* Add Logout/Switch account logic */
               },
               child: const Text(
                 "Not you? Switch Account",
@@ -207,8 +275,9 @@ class _ResumePageState extends State<ResumePage> {
         width: 75,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color:
-              isDark ? AppColors.cardDark : Colors.grey.withValues(alpha: 0.1),
+          color: isDark
+              ? AppColors.cardDark
+              : Colors.grey.withValues(alpha: 0.1),
         ),
         child: Center(
           child: Text(
