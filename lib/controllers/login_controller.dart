@@ -5,6 +5,7 @@ import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:mktdata/main_page.dart';
+import 'package:mktdata/auth/set_pin_page.dart';
 
 class LoginController extends GetxController {
   final box = GetStorage();
@@ -99,7 +100,10 @@ class LoginController extends GetxController {
         if (profileData.containsKey('balance')) {
           await box.write("balance", profileData['balance'].toString());
         }
-        Get.offAll(() => MainPage());
+        String savedPin = box.read('pin') ?? null;
+        
+        Get.offAll(() => savedPin ? MainPage() : SetPinPage());
+        
       } else {
         _showErrorSnackbar("Error", "Failed to load profile");
         isLoading.value = false;
