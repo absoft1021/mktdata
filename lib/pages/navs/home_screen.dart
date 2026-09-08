@@ -92,7 +92,7 @@ class _HomeScreenState extends State<HomeScreen> {
         },
         backgroundColor: const Color(0xFF25D366),
         child: Image.asset(
-          'assets/images/whatsapp.png',
+          'assets/whatsapp.png',
           width: 28,
           height: 28,
         ),
