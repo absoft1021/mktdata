@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:mktdata/utils/api_client.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class MainController extends GetxController {
   final box = GetStorage();
@@ -27,6 +28,14 @@ class MainController extends GetxController {
     kycStatus.value = box.read("kyc_status") ?? '00';
 
     getUserProfile();
+  }
+  
+  void launchURL(String url) async {
+    if (url.isEmpty) return;
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
   }
 
   Future<void> getTransactions() async {

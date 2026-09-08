@@ -85,6 +85,18 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          final contact = c.box.read('contact') ?? '';
+          c.launchURL('https://wa.me/$contact');
+        },
+        backgroundColor: const Color(0xFF25D366),
+        child: Image.asset(
+          'assets/images/whatsapp.png',
+          width: 28,
+          height: 28,
+        ),
+      ),
     );
   }
 
@@ -378,7 +390,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-
+  
   Widget _buildActionButton(
     String label,
     IconData icon,
